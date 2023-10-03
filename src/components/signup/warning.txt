@@ -1,0 +1,16 @@
+ const setName:ChangeEventHandler = (e) => {
+    let ok = namRef.current?.value!;
+    setNameVal(ok.toString());
+  }
+
+  const setEmail:ChangeEventHandler = (e) => {
+    let ok = emailRef.current?.value.toLocaleLowerCase()!;
+    setEmailVal(ok.toString());
+  }
+
+  const setPassword:ChangeEventHandler = (e) => {
+    let ok = pwdRef.current?.value!;
+    setPwdVal(ok.toString());
+  }
+
+  pattern="/([a-z0-9]+)([\_\.\-{1}])?([a-z0-9]+)\@([a-z0-9]+)([\.])([a-z\.]+)/g
