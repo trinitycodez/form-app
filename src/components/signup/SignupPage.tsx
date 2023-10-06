@@ -1,4 +1,5 @@
 import React, { useReducer, useState, FormEventHandler, useEffect, useRef } from "react";
+import { useGoogleLogin } from '@react-oauth/google';
 import { createPortal } from "react-dom";
 import { Submit } from "./Submit";
 import { useNavigate } from "react-router-dom";
@@ -61,6 +62,7 @@ const reducer = (state:initialType, action:actionType):initialType => {
           }
         }
       } else if ((ol === null) && chk) {
+        console.log(ol);
         document.querySelector("#email")!.ariaInvalid = "true";
         return {
           ...state,
@@ -86,56 +88,85 @@ const reducer = (state:initialType, action:actionType):initialType => {
 const SignupPage = () => {
   const [values, dispatch] = useReducer(reducer, initialState);
   const [isVisible, setVisible] = useState(true);
+  const [isPerson, setPerson] = useState("");
   const navigate = useNavigate();
   const namRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const pwdRef = useRef<HTMLInputElement>(null);
   
+  const signup = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        const dataHolder = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+          headers: {
+            Authorization: `Data ${tokenResponse.access_token}`
+          }
+        })
+        console.log(dataHolder);
+        return dataHolder;
+
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    onError: (responseError) => console.error(responseError)
+  });
+
   const submitHandler:FormEventHandler = async(e)=> {
-    e.preventDefault()
+    e.preventDefault();
+    
     if ((!values.message && !values.pwd_message ) && ((emailRef.current!.ariaInvalid === "false") && (pwdRef.current!.ariaInvalid === "false"))) {
       const {name, email, password} = values;
       const person = new Submit(name, email, password, "checked");
       await person.send();
       if (person.sms.name && !person.sms.message) {
         dispatch({type:"ALL", payload:""});
-        navigate(-1);
-        alert(`Dear ${person.sms.name}, you successfully submitted this form`);
+        // namRef.current!.value = "";
+        // emailRef.current!.value = "";
+        // pwdRef.current!.value = "";
+        window.scrollTo({top: 0, left: 0, behavior: 'smooth'});
+        setPerson(`Dear ${person.sms.name}, you successfully submitted this form`);
+        isPerson && setTimeout(() => {
+          navigate(-1);
+        }, 1000);
       } else  {
         alert("An error occur submitting this form");
       }
     }
     return;
   }
+  
 
   useEffect(() => {
     document.title = "Signup - Form App";
     namRef.current?.focus();
+    return ()=> setPerson("");
   }, [])
   
 
   return createPortal(
-    <div className='sign-cont flex absolute top-0 justify-center items-center min-w-full min-h-full overflow-y-auto bg-red-100/40 selection:bg-sky-600 selection:text-white'>
-      <div className="flex flex-col relative mx-auto mt-8 mb-8 min-w-[18rem] min-h-[10rem] bg-white p-5 pt-6 pb-6 border rounded-2xl shadow-lg">
+    <div className='sign-cont flex absolute top-0 justify-center items-center min-w-full min-h-full overflow-y-auto selection:bg-sky-600 selection:text-white bg-layout/30 backdrop-blur-sm'>
+      {isPerson && <div className="alert absolute top-0 mx-auto text-green-700 bg-green-300/40 w-[17rem] p-5 z-10 backdrop-blur-[2px] shadow-md">{isPerson}</div>}
+      <div className="flex flex-col relative mx-auto mt-8 mb-8 min-w-[18rem] min-h-[10rem] bg-white p-5 pt-6 pb-6 border rounded-2xl shadow-lg leading-7 md:min-w-[22rem] md:p-7 md:pt-9 md:pb-9 md:leading-10">
         {/* first line */}
         <div className="flex flex-row justify-between items-center mb-5">
           <span className='text-black font-semibold text-2xl'>Sign up</span>
-          <div className='flex text-center h-[1.6rem] w-[1.6rem] rounded-full border border-gray-300 text-gray-500'>
-            <a href="/app" className="inline-flex w-full h-full justify-center items-center ">
+          <div className='flex text-center h-[1.6rem] w-[1.6rem] rounded-full border border-gray-300 text-gray-500 md:h-[2rem] md:w-[2rem]'>
+            <a href="/app" className="inline-flex w-full h-full justify-center items-center outline-none">
               <span className='inline-flex border border-gray-400 rounded-full h-4 origin-center rotate-45'></span>
               <span className='inline-flex border border-gray-400 rounded-full h-4 origin-center -rotate-45'></span>
             </a>
           </div>
         </div>
         <div className="flex justify-center w-full min-h-[2rem] border border-gray-200 rounded-lg p-3 mb-5">
-          <a href="https://google.com" className="flex items-center">
+          <div role="button" aria-roledescription="this button is to sign in with a google account" className="flex items-center outline-none cursor-pointer" onClick={() => signup()}>
             <div className="w-8 h-fit mr-4">
               <svg fill="#000000" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" className="fill-gray-500 h-auto w-full">
                 <path d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm167 633.6C638.4 735 583 757 516.9 757c-95.7 0-178.5-54.9-218.8-134.9C281.5 589 272 551.6 272 512s9.5-77 26.1-110.1c40.3-80.1 123.1-135 218.8-135 66 0 121.4 24.3 163.9 63.8L610.6 401c-25.4-24.3-57.7-36.6-93.6-36.6-63.8 0-117.8 43.1-137.1 101-4.9 14.7-7.7 30.4-7.7 46.6s2.8 31.9 7.7 46.6c19.3 57.9 73.3 101 137 101 33 0 61-8.7 82.9-23.4 26-17.4 43.2-43.3 48.9-74H516.9v-94.8h230.7c2.9 16.1 4.4 32.8 4.4 50.1 0 74.7-26.7 137.4-73 180.1z"/>
               </svg>
             </div>
             <span className='font-semibold'>Sign up with Google</span>
-          </a>
+          </div>
         </div>
 
         {/* second line */}
@@ -168,7 +199,7 @@ const SignupPage = () => {
                 type:"PASSWORD",
                 payload:`${pwdRef.current!.value}`
                 })}
-            } className='border border-gray-200 rounded-lg placeholder placeholder:tracking-widest focus:border-sky-400 outline-none pr-9 w-full' aria-invalid="false" required />
+            } className='border border-gray-200 rounded-lg placeholder:tracking-widest focus:border-sky-400 outline-none pr-9 w-full' aria-invalid="false" required />
             <div className="flex items-center w-6 h-full absolute right-2 cursor-pointer" onClick={()=>setVisible(!isVisible)}>
               {
                 (isVisible) ? 
@@ -181,17 +212,17 @@ const SignupPage = () => {
           <span className="flex h-fit aria-[invalid]:visible aria-[invalid]:h-fit text-xs text-red-500 w-full -mt-3 ml-[0.15rem] mb-3">{values.pwd_message}</span>
 
           <div className="flex flex-row-reverse items-center justify-end mb-4">
-            <label htmlFor="agreement" className='text-gray-400 font-semibold'>I agree with <a href="https://" className=" text-sky-400 underline">Terms<span className=" text-gray-400">&nbsp;and&nbsp;</span>Privacy</a></label>
+            <label htmlFor="agreement" className='text-gray-400 font-semibold'>I agree with <a href="https://" className="outline-none text-sky-400 underline">Terms<span className=" text-gray-400">&nbsp;and&nbsp;</span>Privacy</a></label>
             <input type="checkbox" name="agreement" id="agreement" className='mr-3 border border-gray-300 rounded-sm focus:ring-0 text-sky-400' checked readOnly required />
           </div>
-          <input type="submit" value="Submit" className='w-full bg-sky-400 text-white font-medium rounded-md p-1 mb-4' />
+          <input type="submit" value="Submit" className='w-full lg:text-xl lg:!leading-[3rem] bg-sky-400 text-white outline-none font-medium rounded-md p-1 mb-4' />
 
         </form>
 
         <div className="flex flex-col pt-4 justify-center items-center text-center">
           <span className='text-gray-400 w-fit'>Already have an account?</span>
           <span className="text-sky-400 w-fit">
-            <a href="/app/login" className="underline">
+            <a href="/app/login" className="outline-none underline lg:text-xl">
               Log in
             </a>
           </span>
