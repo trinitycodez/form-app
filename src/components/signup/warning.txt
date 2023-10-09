@@ -14,3 +14,22 @@
   }
 
   pattern="/([a-z0-9]+)([\_\.\-{1}])?([a-z0-9]+)\@([a-z0-9]+)([\.])([a-z\.]+)/g
+
+
+  {
+    aud: "1075024439976-1qkmpn6mcqlmfe01a5cl6107opsaf43p.apps.googleusercontent.com"
+    azp: "1075024439976-1qkmpn6mcqlmfe01a5cl6107opsaf43p.apps.googleusercontent.com"
+    email: "olowoyoriemmanuel7575@gmail.com"
+    email_verified: true
+    exp: 1696693842
+    family_name: "OLOWOYORI"
+    given_name: "EMMANUEL"
+    iat: 1696690242
+    iss: "https://accounts.google.com"
+    jti: "22912b55e3456658ede9e3b69c55fb0c7513c0b3"
+    locale: "en"
+    name: "EMMANUEL OLOWOYORI"
+    nbf: 1696689942
+    picture: "https://lh3.googleusercontent.com/a/ACg8ocLtogzDwO0JhtEn58Ry9IuKDOnbHi7wHc5q19ABV23R=s96-c"
+    sub: "117404489993746049016"
+  }

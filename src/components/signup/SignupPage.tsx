@@ -1,8 +1,10 @@
-import React, { useReducer, useState, FormEventHandler, useEffect, useRef } from "react";
-import { useGoogleLogin } from '@react-oauth/google';
+import { memo, useReducer, useState, FormEventHandler, useEffect, useRef } from "react";
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { createPortal } from "react-dom";
 import { Submit } from "./Submit";
 import { useNavigate } from "react-router-dom";
+import GooglePerson from "./GoogleSubmit";
+import jwtDecode from "jwt-decode";
 
 interface initialType {
   name:string,
@@ -11,12 +13,10 @@ interface initialType {
   message?:string
   pwd_message?:string
 }
-
 interface actionType {
   type:"NAME" | "EMAIL" | "PASSWORD" | "ALL",
   payload:string
 }
-
 const initialState:initialType = {
   name:"",
   email:"",
@@ -94,41 +94,48 @@ const SignupPage = () => {
   const emailRef = useRef<HTMLInputElement>(null);
   const pwdRef = useRef<HTMLInputElement>(null);
   
-  const signup = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        const dataHolder = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-          headers: {
-            Authorization: `Data ${tokenResponse.access_token}`
-          }
-        })
-        console.log(dataHolder);
-        return dataHolder;
+  const loginGoogle = async (credentialResponse:CredentialResponse) => {
+    const onlineGoogle = await jwtDecode(`${credentialResponse.credential}`) as Response;
+    const personGoogle = new GooglePerson(onlineGoogle);
+    await personGoogle.sendGms();
+    const {gms} = personGoogle;
+    if (gms.email_verified && !gms.message) {
+      // console.log(gms.given_name);
+      localStorage.setItem("GooglePersonVerified", JSON.stringify(
+        {
+          given_name:gms.given_name, 
+          picture:gms.picture, 
+          email_verified:gms.email_verified
+        }));
+      navigate("../../app", {replace:true});
+    }
+  }
 
-      } catch (error) {
-        console.error(error);
-      }
-    },
-    onError: (responseError) => console.error(responseError)
-  });
-
+    
   const submitHandler:FormEventHandler = async(e)=> {
     e.preventDefault();
     
-    if ((!values.message && !values.pwd_message ) && ((emailRef.current!.ariaInvalid === "false") && (pwdRef.current!.ariaInvalid === "false"))) {
+    if ((!values.message && !values.pwd_message ) 
+    && ((emailRef.current!.ariaInvalid === "false") 
+    && (pwdRef.current!.ariaInvalid === "false"))) {
+
       const {name, email, password} = values;
       const person = new Submit(name, email, password, "checked");
       await person.send();
+
       if (person.sms.name && !person.sms.message) {
+        window.scrollTo({top: 0, left: 0, behavior: 'auto'});
         dispatch({type:"ALL", payload:""});
-        // namRef.current!.value = "";
-        // emailRef.current!.value = "";
-        // pwdRef.current!.value = "";
-        window.scrollTo({top: 0, left: 0, behavior: 'smooth'});
+        window.localStorage.setItem("userLogin", `${JSON.stringify({
+          name: person.sms.name,
+          email: person.sms.email,
+          pwd: person.sms.password
+        })}`)
+        // console.log("signup ", localStorage.getItem("userLogin"));
         setPerson(`Dear ${person.sms.name}, you successfully submitted this form`);
-        isPerson && setTimeout(() => {
-          navigate(-1);
-        }, 1000);
+        setTimeout(() => {
+          navigate("../../app/login", {replace:true});
+        }, 2500);    
       } else  {
         alert("An error occur submitting this form");
       }
@@ -140,8 +147,12 @@ const SignupPage = () => {
   useEffect(() => {
     document.title = "Signup - Form App";
     namRef.current?.focus();
-    return ()=> setPerson("");
-  }, [])
+    
+    return ()=> {
+      isPerson && 
+      setPerson("");
+    }
+  }, [isPerson])
   
 
   return createPortal(
@@ -159,39 +170,35 @@ const SignupPage = () => {
           </div>
         </div>
         <div className="flex justify-center w-full min-h-[2rem] border border-gray-200 rounded-lg p-3 mb-5">
-          <div role="button" aria-roledescription="this button is to sign in with a google account" className="flex items-center outline-none cursor-pointer" onClick={() => signup()}>
-            <div className="w-8 h-fit mr-4">
-              <svg fill="#000000" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" className="fill-gray-500 h-auto w-full">
-                <path d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm167 633.6C638.4 735 583 757 516.9 757c-95.7 0-178.5-54.9-218.8-134.9C281.5 589 272 551.6 272 512s9.5-77 26.1-110.1c40.3-80.1 123.1-135 218.8-135 66 0 121.4 24.3 163.9 63.8L610.6 401c-25.4-24.3-57.7-36.6-93.6-36.6-63.8 0-117.8 43.1-137.1 101-4.9 14.7-7.7 30.4-7.7 46.6s2.8 31.9 7.7 46.6c19.3 57.9 73.3 101 137 101 33 0 61-8.7 82.9-23.4 26-17.4 43.2-43.3 48.9-74H516.9v-94.8h230.7c2.9 16.1 4.4 32.8 4.4 50.1 0 74.7-26.7 137.4-73 180.1z"/>
-              </svg>
-            </div>
-            <span className='font-semibold'>Sign up with Google</span>
-          </div>
+          <GoogleLogin
+            onSuccess={(credentialResponse) => loginGoogle(credentialResponse)}
+            onError={() => console.error('Login Failed')}
+          />
         </div>
 
         {/* second line */}
         <form method="POST" onSubmit={submitHandler} id="form_signup" noValidate={false} className='border-t-2 border-b-2 border-t-gray-200 border-b-gray-200 pt-4 pb-4'>
-
+          {/* Name session */}
           <label htmlFor="name" className='inline-block mb-2 font-semibold after:content-["*"] after:text-red-500'>Name </label> <br />
           <input type="text" id="name" placeholder="surname name" value={values.name} ref={namRef} onChange={
             () => {dispatch({
               type:"NAME",
               payload:`${namRef.current!.value}`
               })}
-          } className="border border-gray-200 rounded-lg focus:border-sky-400 placeholder:text-gray-400 outline-none mb-4 w-full" required /> <br />
-
+          } className="border border-gray-200 rounded-lg focus:border-sky-400 placeholder:text-gray-400 placeholder:tracking-wider outline-none mb-4 w-full" required /> <br />
+          {/* E-Mail session */}
           <label htmlFor="email" className='inline-block mb-2 font-semibold after:content-["*"] after:text-red-500'>Email </label> <br />
           <input type="email" id='email' placeholder='trinitydev001@gmail.com' value={values.email} ref={emailRef} onChange={
             () => {dispatch({
               type:"EMAIL",
               payload:`${emailRef.current!.value}`
               })}
-          } className='peer/email border border-gray-200 rounded-lg focus:border-sky-400 placeholder:text-gray-400 outline-none mb-3 w-full' aria-invalid="false" required /> <br />
+          } className='peer/email border border-gray-200 rounded-lg focus:border-sky-400 placeholder:text-gray-400 placeholder:tracking-wider outline-none mb-3 w-full' aria-invalid="false" required /> <br />
           {/* wrong input message prompted */}
           <span className="flex invisible h-0 peer-aria-[invalid]/email:visible peer-aria-[invalid]/email:h-fit text-xs text-red-500 w-full -mt-2 ml-[0.15rem] mb-3">
             {values.message}
           </span>
-
+          {/* Password session */}
           <label htmlFor="password" className='inline-block mb-2 font-semibold after:content-["*"] after:text-red-500'>Password </label> <br />
           <div className="flex w-full min-h-max items-center relative mb-5">
             <input type={`${isVisible? "password": "text"}`} id='password' minLength={8} value={values.password} placeholder="*********" ref={pwdRef} onChange={
@@ -199,8 +206,8 @@ const SignupPage = () => {
                 type:"PASSWORD",
                 payload:`${pwdRef.current!.value}`
                 })}
-            } className='border border-gray-200 rounded-lg placeholder:tracking-widest focus:border-sky-400 outline-none pr-9 w-full' aria-invalid="false" required />
-            <div className="flex items-center w-6 h-full absolute right-2 cursor-pointer" onClick={()=>setVisible(!isVisible)}>
+            } className='peer/pwd border border-gray-200 rounded-lg placeholder:tracking-widest focus:border-sky-400 outline-none pr-9 w-full' aria-invalid="false" required />
+            <div className="peer-focus/pwd:flex hidden items-center w-6 h-full absolute right-2 cursor-pointer" onClick={()=>setVisible(!isVisible)}>
               {
                 (isVisible) ? 
                   <svg xmlns="http://www.w3.org/2000/svg" height="24" className="fill-gray-500 h-auto w-full" viewBox="0 -960 960 960" width="24"><path d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Z"/></svg>
@@ -210,12 +217,12 @@ const SignupPage = () => {
             </div>
           </div>
           <span className="flex h-fit aria-[invalid]:visible aria-[invalid]:h-fit text-xs text-red-500 w-full -mt-3 ml-[0.15rem] mb-3">{values.pwd_message}</span>
-
+          {/* Terms and Privacy session */}
           <div className="flex flex-row-reverse items-center justify-end mb-4">
             <label htmlFor="agreement" className='text-gray-400 font-semibold'>I agree with <a href="https://" className="outline-none text-sky-400 underline">Terms<span className=" text-gray-400">&nbsp;and&nbsp;</span>Privacy</a></label>
             <input type="checkbox" name="agreement" id="agreement" className='mr-3 border border-gray-300 rounded-sm focus:ring-0 text-sky-400' checked readOnly required />
           </div>
-          <input type="submit" value="Submit" className='w-full lg:text-xl lg:!leading-[3rem] bg-sky-400 text-white outline-none font-medium rounded-md p-1 mb-4' />
+          <input type="submit" value="Submit" className='w-full lg:text-xl lg:!leading-[3rem] bg-sky-400 text-white outline-none font-medium rounded-md p-1 mb-4 cursor-pointer' />
 
         </form>
 
@@ -232,4 +239,4 @@ const SignupPage = () => {
     document.getElementById('modal') as Element
   )
 }
-export default React.memo(SignupPage)
+export default memo(SignupPage)

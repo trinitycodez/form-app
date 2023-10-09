@@ -5,8 +5,11 @@ import LayoutApp from './components/LayoutApp';
 import SignupPage from './components/signup/SignupPage';
 import AppHome from './components/AppHome';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { useState } from 'react';
 
-function App() {
+const App = () => {
+
+  const [isLogin, setLogin] = useState("");
 
   return (
     <BrowserRouter>
@@ -15,20 +18,19 @@ function App() {
           <Routes>
             <Route path='/' element={<LayoutApp />} />
             <Route path='/app'>
-              <Route index element={<AppHome />} />
+              <Route index element={<AppHome login={isLogin} />} />
               <Route path='login' element={
-                <GoogleOAuthProvider clientId={`${process.env.HOLDER_KEY}`}>
-                  <LoginPage />
+                <GoogleOAuthProvider clientId={`1075024439976-1qkmpn6mcqlmfe01a5cl6107opsaf43p.apps.googleusercontent.com`}>
+                  <LoginPage loginUser={(val) => setLogin(val)} />
                 </GoogleOAuthProvider>
               } />
               <Route path='signup' element={
-                <GoogleOAuthProvider clientId={`${process.env.HOLDER_KEY}`}>
+                <GoogleOAuthProvider clientId={`1075024439976-1qkmpn6mcqlmfe01a5cl6107opsaf43p.apps.googleusercontent.com`}>
                   <SignupPage />
                 </GoogleOAuthProvider>
               } />            
             </Route>
           </Routes>
-          <p className='text-blue-400'>Loading...</p>
         </main>
       </div>
     </BrowserRouter>

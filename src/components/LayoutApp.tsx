@@ -6,8 +6,8 @@ const LayoutApp = () => {
 
     useEffect(()=>{
         const timer = setTimeout(() => {
-            navigate("/app/login");
-        }, 3000);
+            navigate("/app/login", { replace:true });
+        }, 2500);
         
         return () => {
             clearTimeout(timer);

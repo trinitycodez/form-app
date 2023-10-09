@@ -1,7 +1,7 @@
 type hold = {
     name:string,
-    _email:string,
-    _password:string,
+    email:string,
+    password:string,
     message?:string
 }
 export class Submit {
@@ -30,9 +30,9 @@ export class Submit {
             return res
         })
         .catch((e:Error) => { 
-            return e.message
+            return e.message;
         })
-        // 1075024439976-1qkmpn6mcqlmfe01a5cl6107opsaf43p.apps.googleusercontent.com
+
     }
 
 }
