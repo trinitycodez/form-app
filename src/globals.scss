@@ -15,8 +15,8 @@
   font-size: calc(10px + 2vmin);
   color: white;
 }
+
 .alert {
-  // animation: name duration timing-function delay iteration-count direction fill-mode;
   animation: alert 1s linear 1 forwards;
 }
 @keyframes alert {
@@ -24,7 +24,6 @@
     top: 1rem;
   }
   to {
-    display: none;
     top: 3rem;
   }
 }
