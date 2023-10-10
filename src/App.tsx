@@ -20,12 +20,12 @@ const App = () => {
             <Route path='/app'>
               <Route index element={<AppHome login={isLogin} />} />
               <Route path='login' element={
-                <GoogleOAuthProvider clientId={`1075024439976-1qkmpn6mcqlmfe01a5cl6107opsaf43p.apps.googleusercontent.com`}>
+                <GoogleOAuthProvider clientId={`${process.env.REACT_APP_HOLDER_KEY}`}>
                   <LoginPage loginUser={(val) => setLogin(val)} />
                 </GoogleOAuthProvider>
               } />
               <Route path='signup' element={
-                <GoogleOAuthProvider clientId={`1075024439976-1qkmpn6mcqlmfe01a5cl6107opsaf43p.apps.googleusercontent.com`}>
+                <GoogleOAuthProvider clientId={`${process.env.REACT_APP_HOLDER_KEY}`}>
                   <SignupPage />
                 </GoogleOAuthProvider>
               } />            

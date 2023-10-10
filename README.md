@@ -1,46 +1,91 @@
-# Getting Started with Create React App
+# Form-App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+[![npm version](https://img.shields.io/badge/npm-9.8.1-brightgreen)](https://img.shields.io/badge/npm-9.8.1-brightgreen)
+[![ReactScript version](https://img.shields.io/badge/ReactScript-5.0.1-skyblue)](https://img.shields.io/badge/ReactScript-5.0.1-skyblue)
+[![TypeScript version](https://img.shields.io/badge/TypeScript-4.9.5-blue)](https://img.shields.io/badge/TypeScript-4.9.5-blue)
 
-## Available Scripts
+This is a `Form-App` project written in [ReactJs TypeScript](https://github.com/facebook/create-react-app) and type declarations are included.
 
-In the project directory, you can run:
+## Installation
+To work with all dependencies, run the below installation command on your terminal:
 
-### `npm start`
+```sh
+npm install
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## Scripts
+Integrated into this `Form-App` is the `@react-oauth/google` to make use of the GoogleOAuthProvider component and its children components; `GoogleLogin` and `useGoogleOneTabLogin`.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+### Usage
+Add the `GoogleLogin` component with the `onSuccess` prop to your preferred location as to how it should be displayed on the user interface. The credentialResponse on successful submission will be encrypted, to solve this, import your `jwtDecode` from the `jwt-decode` module: 
 
-### `npm test`
+```tsx
+// App.tsx
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import jwtDecode from "jwt-decode";
 
-### `npm run build`
+export const App = () => {
+    const loginGoogle = async (credentialResponse:CredentialResponse) => {
+        const onlineGoogle = await jwtDecode(`${credentialResponse.credential}`);
+        console.log(onlineGoogle);
+        }
+    }
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+    return (
+        <>
+            <form method="...">
+                <div className="flex ...">
+                    <GoogleLogin
+                    onSuccess={(credentialResponse) => loginGoogle(credentialResponse)}
+                    onError={() => console.error('Login Failed')}
+                    />
+                </div>
+                ...
+            </form>
+        </>
+    );
+}
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```
+Wrap up your application from the `index.tsx` with the `GoogleOAuthProvider` component that has a `clientId` prop:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```tsx
+// index.tsx
 
-### `npm run eject`
+import GoogleOAuthProvider from '@react-oauth/google';
+import App from './App';
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+const root = ReactDOM.createRoot(
+  document.getElementById('root') as HTMLElement
+);
+root.render(
+    <GoogleOAuthProvider clientId={"017XXXXXXXX..."}>
+        <App />
+    </GoogleOAuthProvider>
+);
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+### Run Script Command
+Run in development on the terminal:
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+```sh
+npm start
+```
 
-## Learn More
+## TL;DR
+### Note:
+For the purpose of this `Form-App` project, user's data is stored on the window localStorage, hence, take caution not to implement such aspect for full project exhibition.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Contributing
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Contributions, issues and feature requests are welcome!
+
+## Show your support
+
+Give a ⭐️ if you like this project!
+
+## LICENSE
+
+[MIT](./LICENSE)
