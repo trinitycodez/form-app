@@ -1,11 +1,21 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'
+import { propsType, user } from './login/LoginPage';
 
-const LayoutApp = () => {
+const LayoutApp = ({loginUser}:propsType) => {
     const navigate = useNavigate();
 
     useEffect(()=>{
+        const store = localStorage.getItem("userLogin");
         const timer = setTimeout(() => {
+            if (store !== null) {
+                const {name, loggedIn}:user = JSON.parse(store);
+                if (loggedIn) { 
+                    loginUser(name);
+                    navigate("/app", { replace:true });
+                    return;
+                }
+            }
             navigate("/app/login", { replace:true });
         }, 2500);
         

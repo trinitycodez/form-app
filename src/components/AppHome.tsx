@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import profile from "../images/Profile Pic.jpg"
 import noAccount from "../images/no-account.svg"
 import { memo, useState, useEffect, useRef } from 'react'
+import { user } from './login/LoginPage'
 
 type googleType = {
   given_name:string,
@@ -24,8 +25,13 @@ const AppHome = ({login}:propsType) => {
       setName(person.given_name);
       setImg(person.picture);
     } else if ( localDomain !== null) {
-      setName(login);
       displayRef.current!.style.display = "none";
+      const {name, loggedIn}:user = JSON.parse(localDomain);
+      if (loggedIn) {
+        setName(name);
+        return;
+      }
+      setName(login);
     }
   }, [login])
   

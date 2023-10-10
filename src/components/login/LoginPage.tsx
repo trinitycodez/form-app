@@ -5,12 +5,13 @@ import GooglePerson from "../signup/GoogleSubmit";
 import {createPortal} from 'react-dom';
 import jwtDecode from "jwt-decode";
 
-type user = {
+export type user = {
   name:string,
   email:string,
-  pwd:string
+  pwd:string,
+  loggedIn:boolean
 }
-type propsType = {
+export type propsType = {
   loginUser: (val:string) => void
 }
 
@@ -21,6 +22,7 @@ const LoginPage = ({loginUser}:propsType) => {
   const [isPwd, setPwd] = useState("");
   const namref = useRef<HTMLInputElement>(null);
   const pwdref = useRef<HTMLInputElement>(null);
+  const checkedref = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   const oneTapLogin = async (tokenResponse:CredentialResponse) => {
@@ -54,6 +56,7 @@ const LoginPage = ({loginUser}:propsType) => {
       const holder:user = JSON.parse(userLogin);
       const {name, email, pwd} = holder;
       if ((isName === email) && (isPwd === pwd)) {
+        if (checkedref.current?.checked) localStorage.setItem("userLogin", `${JSON.stringify({...holder, loggedIn: true})}`);
         loginUser(name);
         setName("");
         setPwd("");
@@ -67,11 +70,19 @@ const LoginPage = ({loginUser}:propsType) => {
     }
     navigate('../../app/signup', { replace: true });
   }
-
+  
   useEffect(() => {
     document.title = "Login - Form App";
     namref.current?.focus();
   }, [])
+
+  useEffect(() => {
+    if (isPwd !== "") {
+      document.querySelector(".seer")?.classList.replace("hidden", "flex");
+      return
+    } 
+    document.querySelector(".seer")?.classList.replace("flex", "hidden");
+  }, [isPwd])
   
   return createPortal(
     <div className='login-cont flex absolute top-0 justify-center items-center min-w-full min-h-full overflow-y-auto bg-layout/30 backdrop-blur-sm'>
@@ -96,7 +107,7 @@ const LoginPage = ({loginUser}:propsType) => {
           <label htmlFor="password" className='inline-block mb-2 font-semibold after:content-["*"] after:text-red-500'>Password </label> <br />
           <div className="flex w-full min-h-max items-center relative mb-4">
             <input type={`${isVisible? "password": "text"}`} id='password' value={isPwd} onChange={(val)=>setPwd(val.target.value)} placeholder="*********" ref={pwdref} className='peer/pwd border border-gray-200 rounded-lg placeholder:tracking-widest focus:border-sky-400 outline-none pr-9 w-full' required />
-            <div className="peer-focus/pwd:flex hidden items-center w-6 h-full absolute right-2 cursor-pointer" onClick={()=>setVisible(!isVisible)} >
+            <div className="seer hidden items-center w-6 h-full absolute right-2 cursor-pointer" onClick={()=>setVisible(!isVisible)} >
             {
               (isVisible) ? 
                 <svg xmlns="http://www.w3.org/2000/svg" height="24" className="fill-gray-500 h-auto w-full" viewBox="0 -960 960 960" width="24"><path d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Z"/></svg>
@@ -107,7 +118,7 @@ const LoginPage = ({loginUser}:propsType) => {
           </div>
           <div className="flex flex-row-reverse items-center justify-end mb-4">
             <label htmlFor="remind_me" className='text-gray-400 font-semibold'>Remind me</label>
-            <input type="checkbox" name="remind_me" id="remind_me" className='mr-3 border border-gray-300 rounded-sm focus:ring-0 text-sky-400' />
+            <input type="checkbox" name="remind_me" id="remind_me" ref={checkedref} className='mr-3 border border-gray-300 rounded-sm focus:ring-0 text-sky-400' />
           </div>
           <input type="submit" value="Log in" className='w-full bg-sky-400 text-white font-medium rounded-md p-1 mb-4 lg:text-xl lg:!leading-[3rem]' />
           <span className="inline-block w-full text-sky-400 text-center font-medium">Forgot Password?</span>

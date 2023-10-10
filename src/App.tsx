@@ -16,7 +16,7 @@ const App = () => {
       <div className="App">
         <main className='App-main bg-layout'>
           <Routes>
-            <Route path='/' element={<LayoutApp />} />
+            <Route path='/' element={<LayoutApp loginUser={(val) => setLogin(val)} />} />
             <Route path='/app'>
               <Route index element={<AppHome login={isLogin} />} />
               <Route path='login' element={
